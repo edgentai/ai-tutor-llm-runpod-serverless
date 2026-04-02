@@ -163,7 +163,8 @@ def handler(event):
 
     Input fields (in event["input"]):
         text_prompt (str, required):    The user's text prompt.
-        image_source (str, optional):   Base64 data URI or URL for multimodal.
+        image_base64 (str, optional):   Base64-encoded image data (no data URI prefix).
+        image_media_type (str, optional): MIME type of the image. Default: image/jpeg.
         system_prompt (str, optional):  System prompt. Default: helpful assistant.
         chat_history (list, optional):  Prior messages [{role, content}, ...].
         max_tokens (int, optional):     Max tokens to generate. Default: 8000.
@@ -182,7 +183,8 @@ def handler(event):
 
     # --- Extract parameters ---
     text_prompt = input_data.get("text_prompt", "")
-    image_source = input_data.get("image_source")
+    image_base64 = input_data.get("image_base64")
+    image_media_type = input_data.get("image_media_type", "image/jpeg")
     system_prompt = input_data.get("system_prompt", "You are a helpful assistant.")
     chat_history = input_data.get("chat_history", [])
     max_tokens = input_data.get("max_tokens", 8000)
@@ -213,10 +215,11 @@ def handler(event):
 
     # Current user message (with optional multimodal content)
     user_content = []
-    if image_source:
+    if image_base64:
+        data_uri = f"data:{image_media_type};base64,{image_base64}"
         user_content.append({
             "type": "image_url",
-            "image_url": {"url": image_source},
+            "image_url": {"url": data_uri},
         })
     user_content.append({"type": "text", "text": text_prompt})
 

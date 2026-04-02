@@ -6,6 +6,7 @@ RUN apt-get update && apt-get install -y \
     build-essential \
     cmake \
     curl \
+    git \
     libcurl4-openssl-dev \
     && rm -rf /var/lib/apt/lists/*
 
@@ -13,10 +14,15 @@ RUN apt-get update && apt-get install -y \
 COPY requirements.txt /
 
 # Install Python dependencies
-# llama-cpp-python is compiled with CUDA support via CMAKE_ARGS
+# CUDA driver stubs are needed at link time (the real driver is available at runtime on the GPU host)
+# Setting LIBRARY_PATH to cuda stubs resolves the "libcuda.so.1 not found" linker error
+ENV LIBRARY_PATH=/usr/local/cuda/lib64/stubs:${LIBRARY_PATH}
+
 RUN python -m pip install --upgrade pip && \
-    CMAKE_ARGS="-DGGML_CUDA=on" pip install --upgrade --force-reinstall --no-cache-dir llama-cpp-python && \
+    CMAKE_ARGS="-DGGML_CUDA=on -DCMAKE_CUDA_ARCHITECTURES=80;86;89;90" \
+    pip install --upgrade --force-reinstall --no-cache-dir llama-cpp-python && \
     pip install -r /requirements.txt
+
 
 # Copy handler
 COPY rp_handler.py /
