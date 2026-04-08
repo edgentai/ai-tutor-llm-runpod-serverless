@@ -268,9 +268,9 @@ def handler(event):
 # ENTRYPOINT
 # ============================================================================
 
-if __name__ == "__main__":
-    print("=" * 60)
-    print(f"Handler ready! Model: {MODEL_REPO_ID}")
-    print("RunPod serverless endpoint — no Flask/ngrok/SQS needed")
-    print("=" * 60)
-    runpod.serverless.start({"handler": handler})
+# if __name__ == "__main__":
+#     print("=" * 60)
+#     print(f"Handler ready! Model: {MODEL_REPO_ID}")
+#     print("RunPod serverless endpoint — no Flask/ngrok/SQS needed")
+#     print("=" * 60)
+runpod.serverless.start({"handler": handler})
