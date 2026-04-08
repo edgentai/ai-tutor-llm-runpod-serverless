@@ -97,13 +97,27 @@ def load_model():
                 n_gpu_layers=N_GPU_LAYERS,
             )
 
-    # 2. Download from HuggingFace
+    # 2. Download from HuggingFace — save to network volume if available
     print(f"Downloading model: {MODEL_REPO_ID} ({MODEL_QUANT_DIR})...")
-    print("This may take a while for large models. Consider using a network volume.")
-    model_dir = snapshot_download(
-        repo_id=MODEL_REPO_ID,
-        allow_patterns=[f"{MODEL_QUANT_DIR}/*"],
-    )
+
+    # Determine download target: prefer network volume (persists across restarts)
+    volume_target = os.path.join(NETWORK_VOLUME_PATH, repo_name)
+    if os.path.isdir(NETWORK_VOLUME_PATH):
+        print(f"Network volume detected — downloading to: {volume_target}")
+        os.makedirs(volume_target, exist_ok=True)
+        model_dir = snapshot_download(
+            repo_id=MODEL_REPO_ID,
+            allow_patterns=[f"{MODEL_QUANT_DIR}/*"],
+            local_dir=volume_target,
+        )
+    else:
+        print("WARNING: No network volume found at {NETWORK_VOLUME_PATH}.")
+        print("Model will be downloaded to container disk (not persistent).")
+        print("Attach a network volume for faster cold starts.")
+        model_dir = snapshot_download(
+            repo_id=MODEL_REPO_ID,
+            allow_patterns=[f"{MODEL_QUANT_DIR}/*"],
+        )
     print(f"Model downloaded to: {model_dir}")
 
     # 3. Find the first split
