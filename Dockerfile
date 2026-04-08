@@ -20,6 +20,8 @@ ENV LIBRARY_PATH=/usr/local/cuda/lib64/stubs:${LIBRARY_PATH}
 
 RUN python -m pip install --upgrade pip && \
     CMAKE_ARGS="-DGGML_CUDA=on -DCMAKE_CUDA_ARCHITECTURES=80;86;89;90" \
+    LIBRARY_PATH=/usr/local/cuda/lib64/stubs:${LIBRARY_PATH} \
+    LD_LIBRARY_PATH=/usr/local/cuda/lib64/stubs:${LD_LIBRARY_PATH} \
     pip install --upgrade --force-reinstall --no-cache-dir llama-cpp-python && \
     pip install -r /requirements.txt
 
