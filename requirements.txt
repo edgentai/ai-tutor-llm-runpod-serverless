@@ -1,2 +1,6 @@
+
 runpod
 huggingface-hub
+# For CUDA 12.x support, use cu121 wheels (compatible with CUDA 12.4)
+--extra-index-url https://abetlen.github.io/llama-cpp-python/whl/cu124
+llama-cpp-python
