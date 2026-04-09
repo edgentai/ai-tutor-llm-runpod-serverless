@@ -45,10 +45,10 @@ RUN python -m pip install --upgrade pip && \
     python -m pip install -r /requirements.txt
 
 # Copy your handler file
-COPY rp_handler.py /
+COPY handler.py /
 
 # Set the working directory
 WORKDIR /
 
 # RunPod handler command
-CMD ["python", "-u", "rp_handler.py"]
+CMD ["python", "-u", "handler.py"]
