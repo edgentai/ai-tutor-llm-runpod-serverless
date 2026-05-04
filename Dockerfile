@@ -19,7 +19,7 @@ RUN python -m pip install --upgrade pip && \
     pip install -r /requirements.txt
 
 # Handler + model wrapper
-COPY handler.py /
+COPY rp_handler.py /
 COPY models /models
 
 WORKDIR /
