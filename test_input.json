@@ -1,13 +1,61 @@
 {
-  "input": {
-    "text_prompt": "Explain the significance of the attention mechanism in transformers in 2-3 sentences.",
-    "system_prompt": "You are a knowledgeable AI assistant specializing in machine learning.",
-    "chat_history": [],
-    "max_tokens": 4000,
-    "temperature": 0.6,
-    "top_p": 0.95,
-    "top_k": 20,
-    "min_p": 0.0,
-    "enable_thinking": false
-  }
+    "single_turn_no_thinking": {
+        "input": {
+            "system_prompt": "You are a helpful, knowledgeable AI assistant.",
+            "messages": [
+                {
+                    "role": "user",
+                    "content": "What is quantum computing and how does it differ from classical computing?"
+                }
+            ],
+            "max_tokens": 2048,
+            "enable_thinking": false
+        }
+    },
+    "single_turn_with_thinking": {
+        "input": {
+            "system_prompt": "You are a math tutor. Solve problems step by step.",
+            "messages": [
+                {
+                    "role": "user",
+                    "content": "Prove that the square root of 2 is irrational."
+                }
+            ],
+            "max_tokens": 8192,
+            "enable_thinking": true,
+            "return_thinking": true
+        }
+    },
+    "multi_turn": {
+        "input": {
+            "system_prompt": "You are a knowledgeable AI assistant specializing in science.",
+            "messages": [
+                {"role": "user",      "content": "What is photosynthesis?"},
+                {"role": "assistant", "content": "Photosynthesis is the process by which plants convert light energy into chemical energy..."},
+                {"role": "user",      "content": "Can you explain it in simpler terms?"}
+            ],
+            "max_tokens": 1024,
+            "enable_thinking": false
+        }
+    },
+    "flat_text_prompt": {
+        "input": {
+            "text_prompt": "Explain the difference between Transformers and Mamba architectures in 2 sentences.",
+            "enable_thinking": false,
+            "max_tokens": 512
+        }
+    },
+    "multimodal_image_url": {
+        "input": {
+            "messages": [
+                {
+                    "role": "user",
+                    "content": "Describe what is in this image and identify any text."
+                }
+            ],
+            "image_source": "https://upload.wikimedia.org/wikipedia/commons/thumb/d/dd/Gfp-wisconsin-madison-the-nature-boardwalk.jpg/640px-Gfp-wisconsin-madison-the-nature-boardwalk.jpg",
+            "max_tokens": 1024,
+            "enable_thinking": false
+        }
+    }
 }
