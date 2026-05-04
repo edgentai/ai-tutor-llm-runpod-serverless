@@ -24,4 +24,4 @@ COPY models /models
 
 WORKDIR /
 
-CMD ["python", "-u", "handler.py"]
+CMD ["python", "-u", "rp_handler.py"]
