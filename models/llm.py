@@ -138,7 +138,9 @@ def initialize() -> None:
         limit_mm_per_prompt={"image": LIMIT_IMAGES_PER_PROMPT},
         enforce_eager=ENFORCE_EAGER,
         disable_custom_all_reduce=True,
-        disable_log_requests=True,   # quiet per-request info logs
+        # NB: `disable_log_requests` was removed from AsyncEngineArgs in
+        # recent vLLM versions. Set VLLM_LOGGING_LEVEL=WARNING via env if
+        # you want quieter per-request logs.
     )
     if speculative_config is not None:
         args_kwargs["speculative_config"] = speculative_config
