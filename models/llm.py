@@ -58,6 +58,11 @@ MAX_MODEL_LEN            = int(os.getenv("LLM_MAX_MODEL_LEN", "131072"))
 NATIVE_CTX               = int(os.getenv("LLM_NATIVE_CTX", "32768"))
 YARN_FACTOR              = float(os.getenv("LLM_YARN_FACTOR", "4.0"))
 MAX_NUM_SEQS             = int(os.getenv("LLM_MAX_SEQS", "32"))
+# vLLM warns when max_num_batched_tokens is too small for spec-decode draft
+# slots: with num_spec_tokens=5 and max_num_seqs=32, the prefill+draft budget
+# wants more headroom than the 2048 default. 8192 silences the warning and
+# lets prefill batches actually use the budget.
+MAX_NUM_BATCHED_TOKENS   = int(os.getenv("LLM_MAX_BATCHED_TOKENS", "8192"))
 ENABLE_PREFIX_CACHE      = os.getenv("LLM_PREFIX_CACHE", "1") == "1"
 ENABLE_CHUNKED_PREFILL   = os.getenv("LLM_CHUNKED_PREFILL", "1") == "1"
 LIMIT_IMAGES_PER_PROMPT  = int(os.getenv("LLM_IMAGES_PER_PROMPT", "4"))
@@ -130,6 +135,7 @@ def initialize() -> None:
         gpu_memory_utilization=GPU_MEM_UTIL,
         max_model_len=MAX_MODEL_LEN,
         max_num_seqs=MAX_NUM_SEQS,
+        max_num_batched_tokens=MAX_NUM_BATCHED_TOKENS,
         enable_prefix_caching=ENABLE_PREFIX_CACHE,
         enable_chunked_prefill=ENABLE_CHUNKED_PREFILL,
         hf_overrides=hf_overrides,
@@ -161,11 +167,22 @@ def initialize() -> None:
 async def _async_warmup() -> None:
     """One short generation to trigger CUDA-graph capture + cache tokenizer."""
     global _tokenizer
+    # get_tokenizer() is async in vLLM < 0.7, sync in vLLM >= 0.7
+    result = _engine.get_tokenizer()
+    _tokenizer = await result if asyncio.iscoroutine(result) else result
+
+    # Use a chat-templated prompt — passing raw strings is deprecated since
+    # vLLM 0.17 and will hard-fail in v0.18.
+    warmup_prompt = _tokenizer.apply_chat_template(
+        [{"role": "user", "content": "Hi."}],
+        tokenize=False,
+        add_generation_prompt=True,
+        enable_thinking=False,
+    )
     sampling = SamplingParams(max_tokens=8, temperature=0.6, top_p=0.95)
     rid = "warmup-" + uuid.uuid4().hex[:8]
-    async for _ in _engine.generate("Hi.", sampling, request_id=rid):
+    async for _ in _engine.generate({"prompt": warmup_prompt}, sampling, request_id=rid):
         pass
-    _tokenizer = await _engine.get_tokenizer()
 
 
 def is_ready() -> bool:
@@ -184,7 +201,8 @@ async def get_tokenizer():
     if _tokenizer is None:
         if _engine is None:
             raise RuntimeError("LLM not initialised.")
-        _tokenizer = await _engine.get_tokenizer()
+        result = _engine.get_tokenizer()
+        _tokenizer = await result if asyncio.iscoroutine(result) else result
     return _tokenizer
 
 

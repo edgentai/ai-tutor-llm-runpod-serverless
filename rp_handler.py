@@ -31,6 +31,22 @@ INPUT (event["input"]):
 OUTPUT:
   {status, response: {choices, model, usage}}  (OpenAI-compatible)
 """
+# ============================================================================
+# CRITICAL — set the multiprocessing start method BEFORE any CUDA-touching
+# import (vllm transitively imports torch/CUDA). vLLM V1's AsyncLLMEngine
+# spawns an EngineCore subprocess; on Linux the default is `fork`, which
+# dies with "Cannot re-initialize CUDA in forked subprocess" because CUDA
+# state from the parent isn't fork-safe. Belt-and-braces with the
+# VLLM_WORKER_MULTIPROC_METHOD=spawn env var in the Dockerfile — this Python
+# set covers any subprocess that doesn't honour that vLLM-specific var.
+#
+# Must come BEFORE `from models import llm` (which imports vllm), and must
+# run at module top (not inside __main__) because llm_mod.initialize() is
+# also called at module top, before __main__ would execute.
+# ============================================================================
+import multiprocessing as mp
+mp.set_start_method("spawn", force=True)
+
 import os
 import traceback
 from typing import Any, Dict
