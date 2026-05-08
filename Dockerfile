@@ -20,8 +20,10 @@ ENV LD_LIBRARY_PATH=$CUDA_HOME/lib64:$LD_LIBRARY_PATH
 # model-config loading). Slightly slower startup, but actually works.
 ENV VLLM_WORKER_MULTIPROC_METHOD=spawn
 
-# Quieter per-request logs under load. Flip to INFO for debugging.
-ENV VLLM_LOGGING_LEVEL=WARNING
+# INFO during stabilisation — without it, EngineCore crash tracebacks get
+# swallowed and the parent only sees a bare `EngineDeadError`. Flip back to
+# WARNING once the model is known-stable in production.
+ENV VLLM_LOGGING_LEVEL=INFO
 
 # Build deps only — no ffmpeg, no flash-attn (vLLM ships its own attention).
 RUN apt-get update && apt-get install -y \
