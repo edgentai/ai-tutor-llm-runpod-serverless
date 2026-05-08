@@ -53,15 +53,15 @@ from vllm import AsyncEngineArgs, AsyncLLMEngine, SamplingParams
 # ---------------------------------------------------------------------------
 MODEL_ID                 = os.getenv("LLM_MODEL_ID", "Qwen/Qwen3.6-27B")
 TENSOR_PARALLEL_SIZE     = int(os.getenv("LLM_TP", "1"))
-GPU_MEM_UTIL             = float(os.getenv("LLM_GPU_MEM", "0.92"))
-MAX_MODEL_LEN            = int(os.getenv("LLM_MAX_MODEL_LEN", "131072"))
+GPU_MEM_UTIL             = float(os.getenv("LLM_GPU_MEM", "0.88"))
+MAX_MODEL_LEN            = int(os.getenv("LLM_MAX_MODEL_LEN", "32768"))
 # NATIVE_CTX=32768 with YARN_FACTOR=4.0 mirrors the colab config that has
 # already been validated end-to-end against this model. Qwen3.6's true
 # native is 262144, but YaRN scaling 32K → 128K via factor 4 produces a
 # working rope schedule; vLLM accepts the override.
 NATIVE_CTX               = int(os.getenv("LLM_NATIVE_CTX", "32768"))
 YARN_FACTOR              = float(os.getenv("LLM_YARN_FACTOR", "4.0"))
-MAX_NUM_SEQS             = int(os.getenv("LLM_MAX_SEQS", "32"))
+MAX_NUM_SEQS             = int(os.getenv("LLM_MAX_SEQS", "8"))
 # vLLM warns when max_num_batched_tokens is too small for spec-decode draft
 # slots: with num_spec_tokens=5 and max_num_seqs=32, the prefill+draft budget
 # wants more headroom than the 2048 default. 8192 silences the warning and
@@ -73,7 +73,7 @@ LIMIT_IMAGES_PER_PROMPT  = int(os.getenv("LLM_IMAGES_PER_PROMPT", "4"))
 ENFORCE_EAGER            = os.getenv("LLM_ENFORCE_EAGER", "0") == "1"
 WARMUP_ON_LOAD           = os.getenv("LLM_WARMUP", "1") == "1"
 
-SPECULATIVE_ENABLED      = os.getenv("LLM_SPECULATIVE", "1") == "1"
+SPECULATIVE_ENABLED      = os.getenv("LLM_SPECULATIVE", "0") == "1"
 SPECULATIVE_NUM_TOKENS   = int(os.getenv("LLM_SPEC_NUM_TOKENS", "5"))
 SPECULATIVE_LOOKUP_MAX   = int(os.getenv("LLM_SPEC_LOOKUP_MAX", "4"))
 SPECULATIVE_LOOKUP_MIN   = int(os.getenv("LLM_SPEC_LOOKUP_MIN", "2"))

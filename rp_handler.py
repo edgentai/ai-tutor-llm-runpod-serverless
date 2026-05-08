@@ -176,7 +176,12 @@ if __name__ == "__main__":
     else:
         print("Warning: No HF_TOKEN found, proceeding without authentication")
 
-    llm_mod.initialize()
+    try:
+        llm_mod.initialize()
+    except Exception as e:
+        print(f"Failed to initialize LLM: {e}")
+        traceback.print_exc()
+        raise
 
     print("=" * 60)
     print(f"LLM service ready | model={llm_mod.MODEL_ID} | concurrency={llm_mod.MAX_NUM_SEQS}")
