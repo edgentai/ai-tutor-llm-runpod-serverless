@@ -1,6 +1,9 @@
 runpod
 huggingface-hub
-transformers>=4.56.1
+# Pinned for vLLM 0.19.0 + Qwen3.6-27B. 4.56.x is too old: it lacks the
+# AutoModelForImageTextToText path and the hybrid Gated DeltaNet config classes
+# Qwen3.6 ships with.
+transformers==4.57.1
 sentencepiece
 protobuf
 Pillow

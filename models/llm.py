@@ -55,9 +55,15 @@ MODEL_ID                 = os.getenv("LLM_MODEL_ID", "Qwen/Qwen3.6-27B")
 TENSOR_PARALLEL_SIZE     = int(os.getenv("LLM_TP", "1"))
 GPU_MEM_UTIL             = float(os.getenv("LLM_GPU_MEM", "0.92"))
 MAX_MODEL_LEN            = int(os.getenv("LLM_MAX_MODEL_LEN", "131072"))
-NATIVE_CTX               = int(os.getenv("LLM_NATIVE_CTX", "32768"))
+# Qwen3.6-27B native context is 262,144 (per model card). Setting this lower
+# would either skip YaRN when it shouldn't, or compute the wrong scaling
+# factor when MAX_MODEL_LEN > NATIVE_CTX.
+NATIVE_CTX               = int(os.getenv("LLM_NATIVE_CTX", "262144"))
 YARN_FACTOR              = float(os.getenv("LLM_YARN_FACTOR", "4.0"))
-MAX_NUM_SEQS             = int(os.getenv("LLM_MAX_SEQS", "32"))
+# Tightened from 32 → 8 for Qwen3.6-27B on a single A100-80GB. With ~54 GB of
+# bf16 weights + the vision tower + 0.92 mem util, KV cache for 32 sequences
+# at 128K context OOMs. Bump back up only if you move to H100 / 2x A100.
+MAX_NUM_SEQS             = int(os.getenv("LLM_MAX_SEQS", "8"))
 # vLLM warns when max_num_batched_tokens is too small for spec-decode draft
 # slots: with num_spec_tokens=5 and max_num_seqs=32, the prefill+draft budget
 # wants more headroom than the 2048 default. 8192 silences the warning and
@@ -69,7 +75,11 @@ LIMIT_IMAGES_PER_PROMPT  = int(os.getenv("LLM_IMAGES_PER_PROMPT", "4"))
 ENFORCE_EAGER            = os.getenv("LLM_ENFORCE_EAGER", "0") == "1"
 WARMUP_ON_LOAD           = os.getenv("LLM_WARMUP", "1") == "1"
 
-SPECULATIVE_ENABLED      = os.getenv("LLM_SPECULATIVE", "1") == "1"
+# Default OFF for Qwen3.6: n-gram speculative decoding doesn't compose with
+# the hybrid Gated DeltaNet / Gated Attention architecture in vLLM 0.19 —
+# the verifier path assumes uniform attention layers. Re-enable only if a
+# future vLLM release marks the model as supported.
+SPECULATIVE_ENABLED      = os.getenv("LLM_SPECULATIVE", "0") == "1"
 SPECULATIVE_NUM_TOKENS   = int(os.getenv("LLM_SPEC_NUM_TOKENS", "5"))
 SPECULATIVE_LOOKUP_MAX   = int(os.getenv("LLM_SPEC_LOOKUP_MAX", "4"))
 SPECULATIVE_LOOKUP_MIN   = int(os.getenv("LLM_SPEC_LOOKUP_MIN", "2"))
