@@ -22,9 +22,21 @@ RUN apt-get update && apt-get install -y \
 COPY requirements.txt /
 
 # vLLM nightly (Qwen3.x hybrid arch support) + minimal python deps.
+#
+# IMPORTANT — torch CUDA version pinning:
+# `pip install vllm --extra-index-url ...nightly` upgrades torch to a wheel
+# built against CUDA 12.9+. RunPod hosts ship with NVIDIA driver 12.8, which
+# crashes that newer torch with:
+#   RuntimeError: The NVIDIA driver on your system is too old (found 12080)
+# Fix: install vLLM and its deps, then force-reinstall torch+torchvision from
+# the cu128 wheel index so the binary matches the host driver. `--no-deps`
+# prevents the reinstall from cascading into vLLM's other pinned deps.
 RUN python -m pip install --upgrade pip && \
     pip install vllm --extra-index-url https://wheels.vllm.ai/nightly && \
-    pip install -r /requirements.txt
+    pip install -r /requirements.txt && \
+    pip install --force-reinstall --no-deps \
+        torch torchvision \
+        --index-url https://download.pytorch.org/whl/cu128
 
 # Handler + model wrapper
 COPY rp_handler.py /
