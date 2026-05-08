@@ -40,9 +40,7 @@ OUTPUT:
 # VLLM_WORKER_MULTIPROC_METHOD=spawn env var in the Dockerfile — this Python
 # set covers any subprocess that doesn't honour that vLLM-specific var.
 #
-# Must come BEFORE `from models import llm` (which imports vllm), and must
-# run at module top (not inside __main__) because llm_mod.initialize() is
-# also called at module top, before __main__ would execute.
+# Must stay at module top so it takes effect before any import triggers CUDA.
 # ============================================================================
 import multiprocessing as mp
 mp.set_start_method("spawn", force=True)
@@ -55,22 +53,6 @@ import runpod
 from huggingface_hub import login
 
 from models import llm as llm_mod
-
-# ============================================================================
-# AUTH
-# ============================================================================
-hf_token = os.environ.get("HF_TOKEN")
-if hf_token:
-    login(token=hf_token)
-    print("HuggingFace authentication successful.")
-else:
-    print("Warning: No HF_TOKEN found, proceeding without authentication")
-
-
-# ============================================================================
-# MODEL INIT — at import time, so the worker is ready by the first request
-# ============================================================================
-llm_mod.initialize()
 
 
 # ============================================================================
@@ -170,8 +152,32 @@ def adjust_concurrency(_current_concurrency: int) -> int:
 
 # ============================================================================
 # ENTRYPOINT
+#
+# AUTH + MODEL INIT live here, not at module top, because of how vLLM V1
+# spawns its EngineCore subprocess:
+#
+#   python rp_handler.py          → __name__ == '__main__'  (parent process)
+#   EngineCore spawn re-imports   → __name__ == '__mp_main__' (child process)
+#
+# When spawn re-imports this file, everything at module top runs again. If
+# initialize() were at module top, the child would call initialize() → try to
+# spawn yet another EngineCore → Python raises:
+#   "An attempt has been made to start a new process before the current
+#    process has finished its bootstrapping phase."
+#
+# The if __name__ == '__main__': guard stops the child from running auth or
+# initialize(). The parent runs them exactly once before starting RunPod.
 # ============================================================================
 if __name__ == "__main__":
+    hf_token = os.environ.get("HF_TOKEN")
+    if hf_token:
+        login(token=hf_token)
+        print("HuggingFace authentication successful.")
+    else:
+        print("Warning: No HF_TOKEN found, proceeding without authentication")
+
+    llm_mod.initialize()
+
     print("=" * 60)
     print(f"LLM service ready | model={llm_mod.MODEL_ID} | concurrency={llm_mod.MAX_NUM_SEQS}")
     print("=" * 60)
